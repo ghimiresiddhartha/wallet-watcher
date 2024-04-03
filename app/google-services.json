@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "561924741950",
+    "project_id": "wallet-watcher-a2c19",
+    "storage_bucket": "wallet-watcher-a2c19.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:561924741950:android:4d7f6442f7628f6e74aa6f",
+        "android_client_info": {
+          "package_name": "com.siddhartha.walletwatcher"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAfdWlNugWxtjpnZFjzpUdQQuMq_Au0TLE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
