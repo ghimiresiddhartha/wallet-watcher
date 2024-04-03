@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Wallet Watcher</string>
+    <string name="loading">Loading</string>
 </resources>
