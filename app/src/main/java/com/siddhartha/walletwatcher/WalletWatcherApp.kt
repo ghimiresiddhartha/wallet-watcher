@@ -4,7 +4,9 @@ import android.app.Application
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.ProcessLifecycleOwner
+import dagger.hilt.android.HiltAndroidApp
 
+@HiltAndroidApp
 class WalletWatcherApp : Application(){
 
     private val lifecycleEventObserver = LifecycleEventObserver { _, event ->

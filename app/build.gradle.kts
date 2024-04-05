@@ -1,5 +1,5 @@
 plugins {
-    with(libs.plugins){
+    with(libs.plugins) {
         alias(androidApplication)
         alias(jetbrainsKotlinAndroid)
         alias(jetbrainsKotlinKapt)
@@ -19,8 +19,6 @@ android {
             applicationId = "com.siddhartha.walletwatcher"
             minSdk = minSdkVersion.get().toInt()
             targetSdk = targetSdkVersion.get().toInt()
-            versionCode = targetSdkVersion.get().toInt()
-            versionName = "1.0"
 
 
             testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -30,6 +28,8 @@ android {
             jvmTarget = jvmTargetVersion.get()
         }
     }
+
+    flavorDimensions += "release"
 
     buildTypes {
         release {
@@ -41,6 +41,31 @@ android {
         }
     }
 
+    productFlavors {
+        create("DevEnv") {
+            dimension = "development"
+            versionCode = 1
+            versionName = "0.0.1"
+            buildConfigField("String", "SHARED_PREF_NAME", "\"WalletWatcherApp\"")
+            buildConfigField("String", "SECRET_KEY", "\"${project.properties["SECRET_KEY"]}\"")
+            buildConfigField("String", "IV_KEY", "\"${project.properties["IV_KEY"]}\"")
+            buildConfigField("String", "ALGORITHM", "\"${project.properties["ENCRYPTION_ALGORITHM"]}\"")
+            buildConfigField("String", "MODE", "\"${project.properties["ENCRYPTION_MODE"]}\"")
+        }
+
+        create("ReleaseEnv") {
+            dimension = "release"
+            versionCode = 1
+            versionName = "Code001"
+            buildConfigField("String", "SHARED_PREF_NAME", "\"WalletWatcherApp\"")
+            buildConfigField("String", "DATABASE_NAME", "\"wallet-watcher-database\"")
+            buildConfigField("String", "SECRET_KEY", "\"${project.properties["SECRET_KEY"]}\"")
+            buildConfigField("String", "IV_KEY", "\"${project.properties["IV_KEY"]}\"")
+            buildConfigField("String", "ALGORITHM", "\"${project.properties["ENCRYPTION_ALGORITHM"]}\"")
+            buildConfigField("String", "MODE", "\"${project.properties["ENCRYPTION_MODE"]}\"")
+        }
+    }
+
     dataBinding {
         enable = true
     }
@@ -48,6 +73,7 @@ android {
     buildFeatures {
         viewBinding = true
         dataBinding = true
+        buildConfig = true
     }
 
     compileOptions {
@@ -61,7 +87,7 @@ android {
 }
 
 dependencies {
-    with(libs){
+    with(libs) {
         //Android Essentials
         implementation(material)
         testImplementation(junit)
@@ -124,6 +150,9 @@ dependencies {
         implementation(circleimage)
         implementation(spinkit)
         implementation(chart)
+
+        //Converter
+        implementation(gson)
 
         //Performance Optimizer
         debugImplementation(leakcanary)

@@ -32,6 +32,8 @@ ksp = "1.9.22-1.0.17"
 chart = "v3.1.0"
 googleService = "4.4.1"
 firebase = "32.8.0"
+countryCodePicker = "2.5.0"
+gson = "2.10.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core",name = "core-ktx", version.ref = "coreKtx" }
@@ -50,6 +52,7 @@ androidx-lifecycle-livedata = { group = "androidx.lifecycle", name = "lifecycle-
 androidx-lifecycle-viewmodel = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-ktx", version.ref = "lifecycle" }
 androidx-lifecycle-runtine = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycle" }
 
+gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
 neumorphism = { group = "com.github.fornewid", name = "neumorphism", version.ref = "neumorphism" }
 chart = { group = "com.github.PhilJay", name = "MPAndroidChart", version.ref = "chart" }
 chipnavigationbar = { group = "com.github.ismaeldivita", name = "chip-navigation-bar", version.ref = "chipNavigationBar" }

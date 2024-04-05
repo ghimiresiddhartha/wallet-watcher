@@ -1,4 +1,29 @@
 <resources>
     <string name="app_name">Wallet Watcher</string>
     <string name="loading">Loading</string>
+    <string name="next">Next</string>
+    <string name="skip">skip</string>
+    <string name="enter_phone_number">Enter phone number</string>
+    <string name="objectives_accomplished">1. Multi factor authentication with phone number using firebase.\n2. Recorded user expenses, categorized them and displayed graph.\n3. Used cypher aes 256 algorithm to safeguard sensitive information.\n4. Handled ui changes such as theme and orientation.</string>
+    <string name="explore">Explore</string>
+    <string name="objectives_achieved">Objectives Achieved</string>
+    <string name="android_developer_assessment_test">Android Developer Assessment Test</string>
+    <string name="track_income_and_expenses">Track Income and Expenses</string>
+    <string name="invalid_input">Invalid Input !!!</string>
+    <string name="play_store_outdated">Failed. This can be due to having an old play store version installed on the device.</string>
+    <string name="recaptcha">Recaptcha</string>
+    <string name="no_internet_connection">No internet connection!!!</string>
+    <string name="verify">Verify</string>
+    <string name="enter_otp_code">Enter OTP Code</string>
+    <string name="resend_code">Resend Code</string>
+    <string name="phone_number">Phone Number</string>
+    <string name="enter_screen_name">Enter Screen Name</string>
+    <string name="fill_out_the_form">Fill out the form.</string>
+    <string name="enter_your_monthly_income">Enter your monthly income.</string>
+    <string name="income_loss_category">Expense Category</string>
+    <string name="enter_on_a_monthly_basis">Enter on a monthly basis.</string>
+    <string name="entertainment">Entertainment</string>
+    <string name="food">Food</string>
+    <string name="transportation">Transportation</string>
+    <string name="calculate">Calculate</string>
 </resources>

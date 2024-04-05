@@ -14,6 +14,7 @@ import androidx.lifecycle.ViewModel
 import com.siddhartha.walletwatcher.R
 import com.siddhartha.walletwatcher.presentation.common.ProgressDialog
 import com.siddhartha.walletwatcher.util.AppUtil
+import com.siddhartha.walletwatcher.util.ext.preventTwoClick
 
 abstract class BaseActivity<T : ViewDataBinding, V : ViewModel> : AppCompatActivity() {
 
@@ -61,7 +62,7 @@ abstract class BaseActivity<T : ViewDataBinding, V : ViewModel> : AppCompatActiv
      * Launch(start) the activity from here
      */
     open fun launchActivity(classType: Intent, view: View) {
-        AppUtil.preventTwoClick(view)
+        view.preventTwoClick()
         startActivity(classType)
     }
 
