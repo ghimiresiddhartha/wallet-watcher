@@ -1,9 +1,13 @@
 package com.siddhartha.walletwatcher.presentation.onboarding
 
+import android.content.res.Configuration
 import android.os.Bundle
 import android.view.View
 import com.siddhartha.walletwatcher.BR
 import androidx.activity.viewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.PagerSnapHelper
 import androidx.recyclerview.widget.RecyclerView
@@ -11,10 +15,11 @@ import androidx.recyclerview.widget.SimpleItemAnimator
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.PhoneAuthOptions
 import com.siddhartha.walletwatcher.R
-import com.siddhartha.walletwatcher.callback.CallbackType
-import com.siddhartha.walletwatcher.callback.RootCallback
-import com.siddhartha.walletwatcher.common.PhoneException
+import com.siddhartha.walletwatcher.common.callback.CallbackType
+import com.siddhartha.walletwatcher.common.callback.RootCallback
+import com.siddhartha.walletwatcher.common.exception.PhoneException
 import com.siddhartha.walletwatcher.databinding.ActivityOnBoardingBinding
+import com.siddhartha.walletwatcher.domain.model.onboarding.FormData
 import com.siddhartha.walletwatcher.domain.model.onboarding.PhoneSmsResponse
 import com.siddhartha.walletwatcher.domain.model.onboarding.UserData
 import com.siddhartha.walletwatcher.presentation.base.BaseActivity
@@ -22,10 +27,14 @@ import com.siddhartha.walletwatcher.presentation.onboarding.adapter.OnBoardScree
 import com.siddhartha.walletwatcher.presentation.onboarding.adapter.OnBoardScreensAdapter.Companion.FORM_SCREEN
 import com.siddhartha.walletwatcher.presentation.onboarding.adapter.OnBoardScreensAdapter.Companion.PHONE_SCREEN
 import com.siddhartha.walletwatcher.presentation.onboarding.adapter.OnBoardScreensAdapter.Companion.WELCOME_SCREEN
+import com.siddhartha.walletwatcher.util.AppConstant.FORM_DATA
+import com.siddhartha.walletwatcher.util.AppConstant.USER_DATA
 import com.siddhartha.walletwatcher.util.ext.gone
+import com.siddhartha.walletwatcher.util.ext.openHomeActivity
 import com.siddhartha.walletwatcher.util.ext.snack
 import com.siddhartha.walletwatcher.util.ext.visible
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class OnBoardingActivity : BaseActivity<ActivityOnBoardingBinding, OnBoardingViewModel>(),
@@ -38,6 +47,9 @@ class OnBoardingActivity : BaseActivity<ActivityOnBoardingBinding, OnBoardingVie
     private lateinit var screenAdapter: OnBoardScreensAdapter
     private var updatedScreenItemPosition = 0
     private var phoneNumber = ""
+    private var screenName = ""
+    private var uid = ""
+
     override fun getLayoutId(): Int = R.layout.activity_on_boarding
 
     override fun getBindingVariable(): Int = BR.viewModel
@@ -47,8 +59,38 @@ class OnBoardingActivity : BaseActivity<ActivityOnBoardingBinding, OnBoardingVie
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = getViewDataBinding()
+        showProgressDialog()
+        onBoardingViewModel.getCurrentLoggedInUserData()
         initViewAndResources()
-        screenAdapter.setData(mutableListOf(WELCOME_SCREEN))
+        manageUserSession()
+    }
+
+    private fun manageUserSession() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                onBoardingViewModel.userData.collect { userData ->
+                    finishProgressDialog()
+                    if (userData != null) {
+                        uid = userData.uid.toString()
+                        if (userData.screenName != "null") {
+                            screenName = userData.screenName.toString()
+                            openFormScreen()
+                        } else {
+                            openNameScreen(
+                                UserData(
+                                    userData.uid, null, phoneNumber
+                                )
+                            )
+                        }
+                    } else {
+                        if (onBoardingViewModel.isNewUser()) {
+                            finishProgressDialog()
+                            openWelcomeScreen()
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private fun initViewAndResources() {
@@ -58,8 +100,7 @@ class OnBoardingActivity : BaseActivity<ActivityOnBoardingBinding, OnBoardingVie
             val itemAnimator = itemAnimator as SimpleItemAnimator
             itemAnimator.supportsChangeAnimations = false
             layoutManager = LinearLayoutManager(
-                this@OnBoardingActivity,
-                LinearLayoutManager.HORIZONTAL, false
+                this@OnBoardingActivity, LinearLayoutManager.HORIZONTAL, false
             )
             PagerSnapHelper().attachToRecyclerView(this)
             adapter = screenAdapter
@@ -81,167 +122,88 @@ class OnBoardingActivity : BaseActivity<ActivityOnBoardingBinding, OnBoardingVie
         when (type) {
             CallbackType.REDIRECTED_FROM_WELCOME_SCREEN -> {
                 updatedScreenItemPosition = index + 1
-                screenAdapter.addItem(PHONE_SCREEN, updatedScreenItemPosition)
-                binding.rvIntroCards.smoothScrollToPosition(updatedScreenItemPosition)
+                openPhoneScreen()
             }
 
             CallbackType.REDIRECTED_FROM_PHONE_SCREEN -> {
                 hideKeyboard()
-                binding.loader.loaderParent.visible()
-                phoneAuthOptions.setActivity(this@OnBoardingActivity)
-                sendOtpCodeOnDevice(data, index)
+                updatedScreenItemPosition = index + 1
+                initOtpConfiguration(data)
             }
 
             CallbackType.REDIRECTED_FROM_OTP_SCREEN -> {
-                handleOtpScreenEvents(data)
+                hideKeyboard()
+                updatedScreenItemPosition = index
+                manageOtpScreenEvents(data)
             }
 
             CallbackType.REDIRECTED_FROM_NAME_SCREEN -> {
-                updateScreenName(data)
+                updatedScreenItemPosition = 0
+                manageNameScreenEvents(data)
+            }
+
+            CallbackType.REDIRECTED_FROM_FORM_SCREEN -> {
+                manageFormScreenEvents(data)
             }
 
             else -> {}
         }
     }
 
-    private fun sendOtpCodeOnDevice(screenData: Any?, screenIndex: Int) {
-        val result = screenData as Result<*>
-        result.apply {
-            when {
-                isSuccess -> {
-                    phoneNumber = getOrDefault("") as String
-                    onBoardingViewModel.sendOtp(
-                        phoneNumber,
-                        phoneAuthOptions
-                    ).observe(this@OnBoardingActivity) {
-                        handleOtpCodeResponse(screenIndex, it)
-                    }
-                }
-
-                isFailure -> {
-                    try {
-                        getOrThrow()
-                    } catch (e: PhoneException) {
-                        binding.root.snack(e.message) {}
-                    }
-                }
-            }
+    private fun openWelcomeScreen() {
+        if (screenAdapter.getItemList().isEmpty()) {
+            screenAdapter.setData(mutableListOf(WELCOME_SCREEN))
+        } else {
+            binding.rvIntroCards.smoothScrollToPosition(updatedScreenItemPosition)
+            binding.loader.loaderParent.visible()
         }
     }
 
-    private fun handleOtpCodeResponse(screenIndex: Int, response: Result<PhoneSmsResponse>){
-        binding.loader.loaderParent.gone()
-        response.apply {
-            when {
-                isSuccess -> {
-                    getOrDefault(null)?.apply {
-                        displayOtpScreen(screenIndex, this)
-                    }
-                }
-
-                isFailure -> {
-                    try {
-                        getOrThrow()
-                    } catch (e: PhoneException) {
-                        binding.root.snack(e.message) {}
-                    }
-                }
-            }
-        }
-    }
-
-    private fun displayOtpScreen(screenIndex: Int, response: PhoneSmsResponse) {
-        binding.root.snack("Code has been sent to your phone.") {}
-        updatedScreenItemPosition = screenIndex + 1
-        screenAdapter.addItem(response, updatedScreenItemPosition)
+    private fun openPhoneScreen() {
+        screenAdapter.addItem(PHONE_SCREEN, updatedScreenItemPosition)
         binding.rvIntroCards.smoothScrollToPosition(updatedScreenItemPosition)
     }
 
-    private fun handleOtpScreenEvents(screenData: Any?){
-        val result = screenData as Result<*>
-        result.apply {
-            when {
-                isSuccess -> {
-                    val response = getOrDefault("") as PhoneSmsResponse
-                    if (response.message == CallbackType.VERIFY_OTP.toString()){
-                        onBoardingViewModel.verifyOtp(response).observe(this@OnBoardingActivity){
-                            handleOtpVerifiedResponse(it)
-                        }
-                    }else if (response.message == CallbackType.RE_SEND_OTP.toString()){
-                        phoneAuthOptions.setForceResendingToken(response.phoneAuthDetails!!.resendToken)
-                        resendOtp()
-                    }
-                }
-
-                isFailure -> {
-                    try {
-                        getOrThrow()
-                    } catch (e: PhoneException) {
-                        binding.root.snack(e.message) {}
-                    }
-                }
+    private fun openOtpScreen(response: PhoneSmsResponse) {
+        try {
+            val item = screenAdapter.getItemList().elementAt(updatedScreenItemPosition)
+            if (item is PhoneSmsResponse) {
+                binding.rvIntroCards.smoothScrollToPosition(updatedScreenItemPosition)
+            } else {
+                screenAdapter.addItem(response, updatedScreenItemPosition)
+                binding.rvIntroCards.smoothScrollToPosition(updatedScreenItemPosition)
             }
+        } catch (e: IndexOutOfBoundsException) {
+            screenAdapter.addItem(response, updatedScreenItemPosition)
+            binding.rvIntroCards.smoothScrollToPosition(updatedScreenItemPosition)
         }
     }
 
-    private fun handleOtpVerifiedResponse(response: Result<UserData>){
-        response.apply {
-            when {
-                isSuccess -> {
-                    val userData = getOrDefault(null)
-                    if (userData != null) {
-                        displayNameScreen(userData)
-                    }
-                }
-
-                isFailure -> {
-                    try {
-                        getOrThrow()
-                    } catch (e: PhoneException) {
-                        binding.root.snack(e.message) {}
-                    }
-                }
-            }
-        }
-    }
-
-    private fun displayNameScreen(userData: UserData){
-        userData.phoneNumber = phoneNumber
-        binding.root.snack("Otp successfully verified.") {}
+    private fun openNameScreen(userData: UserData) {
+        onBoardingViewModel.setNewUserStatus(false)
         updatedScreenItemPosition = 0
+        userData.phoneNumber = phoneNumber
         screenAdapter.setData(mutableListOf(userData))
         binding.rvIntroCards.smoothScrollToPosition(updatedScreenItemPosition)
     }
 
-    private fun resendOtp(){
-        binding.loader.loaderParent.visible()
-        onBoardingViewModel.sendOtp(phoneNumber, phoneAuthOptions).observe(this){
-            binding.loader.loaderParent.gone()
-            it.apply {
-                if (isFailure){
-                    try {
-                        getOrThrow()
-                    }catch (e: PhoneException){
-                        binding.root.snack(e.message) {}
-                    }
-                } else {
-                    binding.root.snack("Code has been sent to your phone.") {}
-                }
-            }
-        }
+    private fun openFormScreen() {
+        updatedScreenItemPosition = 0
+        screenAdapter.setData(mutableListOf(FORM_SCREEN))
+        binding.rvIntroCards.smoothScrollToPosition(updatedScreenItemPosition)
     }
 
-    private fun updateScreenName(screenData: Any?){
+    private fun initOtpConfiguration(screenData: Any?) {
         val result = screenData as Result<*>
+        binding.loader.loaderParent.visible()
+        phoneAuthOptions.setActivity(this@OnBoardingActivity)
         result.apply {
-            when{
+            when {
                 isSuccess -> {
-                    val response = getOrDefault("") as UserData
-                    onBoardingViewModel.updateScreenName(response.uid.toString(), response.screenName.toString())
-                    updatedScreenItemPosition = 0
-                    screenAdapter.setData(mutableListOf(FORM_SCREEN))
-                    binding.rvIntroCards.smoothScrollToPosition(updatedScreenItemPosition)
+                    phoneNumber = getOrDefault("") as String
+                    sendOtpCodeOnDevice()
                 }
+
                 isFailure -> {
                     try {
                         getOrThrow()
@@ -250,6 +212,156 @@ class OnBoardingActivity : BaseActivity<ActivityOnBoardingBinding, OnBoardingVie
                     }
                 }
             }
+        }
+    }
+
+    private fun sendOtpCodeOnDevice() {
+        onBoardingViewModel.sendOtp(
+            phoneNumber, phoneAuthOptions
+        ).observe(this@OnBoardingActivity) {
+            binding.loader.loaderParent.gone()
+            it.apply {
+                when {
+                    isSuccess -> {
+                        getOrDefault(null)?.apply {
+                            if (this.phoneAuthDetails?.resendToken != null) {
+                                binding.root.snack("Code has been sent to your phone.") {}
+                                openOtpScreen(this)
+                            }
+                        }
+                    }
+
+                    isFailure -> {
+                        try {
+                            getOrThrow()
+                        } catch (e: PhoneException) {
+                            binding.root.snack(e.message) {}
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun manageOtpScreenEvents(screenData: Any?) {
+        val result = screenData as Result<*>
+        result.apply {
+            when {
+                isSuccess -> {
+                    binding.loader.loaderParent.visible()
+                    val response = getOrDefault("") as PhoneSmsResponse
+                    if (response.message == CallbackType.VERIFY_OTP.toString()) {
+                        updatedScreenItemPosition = 0
+                        verifyOtpCode(response)
+                    } else if (response.message == CallbackType.RE_SEND_OTP.toString()) {
+                        resendOtpCode(response)
+                    }
+                }
+
+                isFailure -> {
+                    try {
+                        getOrThrow()
+                    } catch (e: PhoneException) {
+                        binding.root.snack(e.message) {}
+                    }
+                }
+            }
+        }
+    }
+
+    private fun verifyOtpCode(response: PhoneSmsResponse) {
+        onBoardingViewModel.verifyOtp(response).observe(this@OnBoardingActivity) {
+            binding.loader.loaderParent.gone()
+            it.apply {
+                when {
+                    isSuccess -> {
+                        val userData = getOrDefault(null)
+                        onBoardingViewModel.storeUidOfCurrentUser(userData?.uid.toString())
+                        if (userData != null) {
+                            binding.root.snack("Otp successfully verified.") {}
+                            openNameScreen(userData)
+                        }
+                    }
+
+                    isFailure -> {
+                        try {
+                            getOrThrow()
+                        } catch (e: PhoneException) {
+                            binding.root.snack(e.message) {}
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun resendOtpCode(response: PhoneSmsResponse) {
+        response.phoneAuthDetails?.resendToken?.let {
+            phoneAuthOptions.setForceResendingToken(it)
+        }
+        sendOtpCodeOnDevice()
+    }
+
+    private fun manageNameScreenEvents(screenData: Any?) {
+        val result = screenData as Result<*>
+        result.apply {
+            when {
+                isSuccess -> {
+                    val response = getOrDefault("") as UserData
+                    screenName = response.screenName.toString()
+                    updateScreenNameOnDatabase(response)
+                    openFormScreen()
+                }
+
+                isFailure -> {
+                    try {
+                        getOrThrow()
+                    } catch (e: PhoneException) {
+                        binding.root.snack(e.message) {}
+                    }
+                }
+            }
+        }
+    }
+
+    private fun updateScreenNameOnDatabase(response: UserData) {
+        onBoardingViewModel.updateScreenName(
+            response.uid.toString(), response.screenName.toString()
+        )
+    }
+
+    private fun manageFormScreenEvents(screenData: Any?) {
+        val result = screenData as Result<*>
+        result.apply {
+            when {
+                isSuccess -> {
+                    val formData = getOrDefault("") as FormData
+                    val userData = UserData(null, screenName, phoneNumber)
+                    openHomeActivity {
+                        putParcelable(USER_DATA, userData)
+                        putParcelable(FORM_DATA, formData)
+                    }
+                    this@OnBoardingActivity.finish()
+                }
+
+                isFailure -> {
+                    try {
+                        getOrThrow()
+                    } catch (e: PhoneException) {
+                        binding.root.snack(e.message) {}
+                    }
+                }
+            }
+        }
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        val item = screenAdapter.getItemList().elementAt(updatedScreenItemPosition)
+        if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE && item == FORM_SCREEN) {
+            binding.toolbar.gone()
+        } else if (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT && item == FORM_SCREEN) {
+            binding.toolbar.visible()
         }
     }
 }

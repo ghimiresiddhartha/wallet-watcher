@@ -1,5 +1,6 @@
 package com.siddhartha.walletwatcher.framework.datasource
 
+import android.content.SharedPreferences
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.google.firebase.FirebaseException
@@ -7,15 +8,19 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.PhoneAuthCredential
 import com.google.firebase.auth.PhoneAuthOptions
 import com.google.firebase.auth.PhoneAuthProvider
+import com.google.gson.Gson
 import com.siddhartha.walletwatcher.data.datasource.OnBoardingDataSource
 import com.siddhartha.walletwatcher.data.model.onboarding.PhoneAuthDetails
 import com.siddhartha.walletwatcher.data.model.onboarding.PhoneSmsResponse
-import com.siddhartha.walletwatcher.common.PhoneException
+import com.siddhartha.walletwatcher.common.exception.PhoneException
 import com.siddhartha.walletwatcher.data.model.onboarding.UserData
 import com.siddhartha.walletwatcher.data.model.onboarding.VerifiedPhoneDetails
 import com.siddhartha.walletwatcher.framework.local.db.AppDb
-import com.siddhartha.walletwatcher.util.AppUtil
+import com.siddhartha.walletwatcher.framework.model.EncryptDataItem
+import com.siddhartha.walletwatcher.util.AppConstant.IS_NEW_USER
+import com.siddhartha.walletwatcher.util.AppConstant.UID
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 import javax.crypto.Cipher
@@ -25,7 +30,9 @@ import javax.inject.Singleton
 
 @Singleton
 class OnBoardingDataSourceImpl @Inject constructor(
-    @Named("encrypt") private val cipher: Cipher,
+    @Named("encrypt") private val cipherEncrypt: Cipher,
+    @Named("decrypt") private val cipherDecrypt: Cipher,
+    @Named("shared") private val sharedPref: SharedPreferences,
     private val appDb: AppDb
 ) : OnBoardingDataSource {
     override fun sendOtp(
@@ -50,15 +57,16 @@ class OnBoardingDataSourceImpl @Inject constructor(
 
                 override fun onCodeSent(p0: String, p1: PhoneAuthProvider.ForceResendingToken) {
                     phoneSmsResponse.phoneAuthDetails = PhoneAuthDetails(
-                        verificationId = p0,
-                        resendToken = p1
+                        verificationId = p0, resendToken = p1
                     )
                     resultLiveData.postValue(Result.success(phoneSmsResponse))
                 }
 
                 override fun onCodeAutoRetrievalTimeOut(p0: String) {
-                    phoneSmsResponse.message = "Timeout!!!"
-                    resultLiveData.postValue(Result.failure(PhoneException(phoneSmsResponse.message.toString())))
+                    phoneSmsResponse.phoneAuthDetails = PhoneAuthDetails(
+                        verificationId = p0, resendToken = null
+                    )
+                    resultLiveData.postValue(Result.success(phoneSmsResponse))
                 }
             })
         }
@@ -67,17 +75,16 @@ class OnBoardingDataSourceImpl @Inject constructor(
     }
 
     override fun verifyOtp(
-        coroutineScope: CoroutineScope,
-        phoneAuthCredential: PhoneAuthCredential
+        coroutineScope: CoroutineScope, phoneAuthCredential: PhoneAuthCredential
     ): LiveData<Result<UserData>> {
         val resultLiveData = MutableLiveData<Result<UserData>>()
-        FirebaseAuth.getInstance().signInWithCredential(phoneAuthCredential)
-            .addOnCompleteListener {
+        FirebaseAuth.getInstance().signInWithCredential(phoneAuthCredential).addOnCompleteListener {
+            if (it.isSuccessful) {
                 val user = UserData(
                     null,
                     it.result.user?.uid,
                     screenName = it.result.additionalUserInfo?.username.toString(),
-                    phoneNumber = cipher.doFinal(
+                    phoneNumber = cipherEncrypt.doFinal(
                         it.result.user?.phoneNumber.toString().toByteArray()
                     )
                 )
@@ -85,16 +92,41 @@ class OnBoardingDataSourceImpl @Inject constructor(
                     appDb.userItemDao().insert(user)
                 }
                 resultLiveData.postValue(Result.success(user))
+            } else {
+                resultLiveData.postValue(Result.failure(PhoneException(it.exception?.message.toString())))
             }
-            .addOnFailureListener {
-                resultLiveData.postValue(Result.failure(PhoneException(it.message.toString())))
-            }
+
+        }.addOnFailureListener {
+            resultLiveData.postValue(Result.failure(PhoneException(it.message.toString())))
+        }
         return resultLiveData
     }
 
     override suspend fun updateScreenNameInDatabase(uid: String?, screenName: String?) {
-        if (uid != null && screenName != null)
-            appDb.userItemDao().updateUsername(uid, screenName)
+        if (uid != null && screenName != null) appDb.userItemDao().updateUsername(uid, screenName)
     }
+
+    override fun getUserData(uid: String?): Flow<UserData?> =
+        appDb.userItemDao().getUserData(uid.toString())
+
+    override fun saveUidOfCurrentUser(uid: String) {
+        val cipherEncryptedData = cipherEncrypt.doFinal(uid.toByteArray())
+        sharedPref.edit().putString(UID, Gson().toJson(EncryptDataItem(cipherEncryptedData)))
+            .apply()
+    }
+
+    override fun getUidOfCurrentUser(): String {
+        val encryptedUid = sharedPref.getString(UID, null)
+        return encryptedUid?.let {
+            val encryptedDataItem = Gson().fromJson(encryptedUid, EncryptDataItem::class.java)
+            val cipherDecryptedData = cipherDecrypt.doFinal(encryptedDataItem.cipherText)
+            String(cipherDecryptedData)
+        } ?: ""
+    }
+
+    override fun getNewUserStatus(): Boolean = sharedPref.getBoolean(IS_NEW_USER, true)
+
+    override fun setNewUserStatus(status: Boolean) =
+        sharedPref.edit().putBoolean(IS_NEW_USER, status).apply()
 
 }

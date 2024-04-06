@@ -19,6 +19,7 @@
         tools:targetApi="tiramisu">
         <activity
             android:name=".presentation.onboarding.OnBoardingActivity"
+            android:configChanges="orientation"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -27,9 +28,9 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".presentation.MainActivity"
-            android:exported="false">
-        </activity>
+            android:name=".presentation.home.HomeActivity"
+            android:configChanges="orientation|screenSize|keyboardHidden|smallestScreenSize|screenLayout"
+            android:exported="false"/>
     </application>
 
 </manifest>

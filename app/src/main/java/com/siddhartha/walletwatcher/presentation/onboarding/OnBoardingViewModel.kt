@@ -8,23 +8,28 @@ import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.PhoneAuthOptions.Builder
 import com.google.firebase.auth.PhoneAuthProvider
 import com.siddhartha.walletwatcher.R
-import com.siddhartha.walletwatcher.common.PhoneException
+import com.siddhartha.walletwatcher.common.exception.PhoneException
 import com.siddhartha.walletwatcher.domain.model.onboarding.PhoneSmsResponse
 import com.siddhartha.walletwatcher.domain.model.onboarding.UserData
 import com.siddhartha.walletwatcher.domain.repository.OnBoardingRepository
 import com.siddhartha.walletwatcher.util.AppUtil
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class OnBoardingViewModel @Inject constructor(
-    private val application: Application,
-    private val repository: OnBoardingRepository
+    private val application: Application, private val repository: OnBoardingRepository
 ) : ViewModel() {
+
+    private val _userData = MutableStateFlow<UserData?>(null)
+    val userData: StateFlow<UserData?>
+        get() = _userData
+
     fun sendOtp(
-        phoneNumber: String,
-        phoneAuthOptions: Builder
+        phoneNumber: String, phoneAuthOptions: Builder
     ): LiveData<Result<PhoneSmsResponse>> {
         val result = MutableLiveData<Result<PhoneSmsResponse>>()
         return if (AppUtil.isConnection()) {
@@ -51,9 +56,21 @@ class OnBoardingViewModel @Inject constructor(
         }
     }
 
-    fun updateScreenName(uid: String, screenName: String) =
-        viewModelScope.launch {
-            repository.updateScreenNameInDatabase(uid, screenName)
-        }
+    fun updateScreenName(uid: String, screenName: String) = viewModelScope.launch {
+        repository.updateScreenNameInDatabase(uid, screenName)
+    }
 
+    fun storeUidOfCurrentUser(uid: String) = repository.saveUidOfCurrentUser(uid)
+    fun setNewUserStatus(status: Boolean) = repository.setNewUserStatus(status)
+
+    fun isNewUser(): Boolean = repository.getNewUserStatus()
+
+    fun getCurrentLoggedInUserData() {
+        val uid = repository.getUidOfCurrentUser()
+        viewModelScope.launch {
+            repository.getUserData(uid).collect {
+                _userData.emit(it)
+            }
+        }
+    }
 }

@@ -1,5 +1,5 @@
 package com.siddhartha.walletwatcher.data.model.onboarding
 
-data class VerifiedPhoneDetails (
+data class VerifiedPhoneDetails(
     var smsCode: String?
 )

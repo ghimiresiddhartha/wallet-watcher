@@ -42,7 +42,7 @@ To get started with WalletWatcher, follow these steps:
 
 1. You may receive agp version error while syncing project. Goto the project directory and find **libs.versions.toml** file. Change the version of the agp as recommended.
 2. You may not receive sms code on your phone. On that case try using this test credentials. phone: **9800818055** code: **777777** of 6-digit.
-3. The reasons behind not receiving sms code may be due to old play service version installed on the device or firebase-config sha fingerprint mismatch.
+3. The reasons behind not receiving sms code may be due to old play service version installed on the device or otp quota limit exceeded or firebase-config sha fingerprint mismatch.
 
 ## Technologies Used
 

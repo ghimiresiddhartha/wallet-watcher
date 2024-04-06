@@ -7,17 +7,19 @@ import androidx.lifecycle.ProcessLifecycleOwner
 import dagger.hilt.android.HiltAndroidApp
 
 @HiltAndroidApp
-class WalletWatcherApp : Application(){
+class WalletWatcherApp : Application() {
 
     private val lifecycleEventObserver = LifecycleEventObserver { _, event ->
-        when(event){
-            Lifecycle.Event.ON_START->{
+        when (event) {
+            Lifecycle.Event.ON_START -> {
                 isApplicationRunning = true
             }
-            Lifecycle.Event.ON_STOP->{
+
+            Lifecycle.Event.ON_STOP -> {
                 isApplicationRunning = false
             }
-            else->{}
+
+            else -> {}
         }
     }
 

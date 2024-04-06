@@ -3,7 +3,7 @@ package com.siddhartha.walletwatcher.presentation.onboarding.adapter
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
-import com.siddhartha.walletwatcher.callback.RootCallback
+import com.siddhartha.walletwatcher.common.callback.RootCallback
 import com.siddhartha.walletwatcher.databinding.FormScreenBinding
 import com.siddhartha.walletwatcher.databinding.NameScreenBinding
 import com.siddhartha.walletwatcher.databinding.OtpScreenBinding
@@ -13,8 +13,7 @@ import com.siddhartha.walletwatcher.domain.model.onboarding.PhoneSmsResponse
 import com.siddhartha.walletwatcher.domain.model.onboarding.UserData
 import java.lang.Exception
 
-class OnBoardScreensAdapter :
-    RecyclerView.Adapter<OnBoardScreensViewHolder>() {
+class OnBoardScreensAdapter : RecyclerView.Adapter<OnBoardScreensViewHolder>() {
 
     private var rootCallback: RootCallback<Any>? = null
     private var dataList = mutableListOf<Any>()
@@ -23,45 +22,35 @@ class OnBoardScreensAdapter :
         when (viewType) {
             WELCOME_SCREEN -> {
                 val binding = WelcomeScreenBinding.inflate(
-                    LayoutInflater.from(parent.context),
-                    parent,
-                    false
+                    LayoutInflater.from(parent.context), parent, false
                 )
                 return OnBoardScreensViewHolder.WelcomeScreenViewHolder(binding, rootCallback)
             }
 
             PHONE_SCREEN -> {
                 val binding = PhoneScreenBinding.inflate(
-                    LayoutInflater.from(parent.context),
-                    parent,
-                    false
+                    LayoutInflater.from(parent.context), parent, false
                 )
                 return OnBoardScreensViewHolder.PhoneScreenViewHolder(binding, rootCallback)
             }
 
             OTP_SCREEN -> {
                 val binding = OtpScreenBinding.inflate(
-                    LayoutInflater.from(parent.context),
-                    parent,
-                    false
+                    LayoutInflater.from(parent.context), parent, false
                 )
                 return OnBoardScreensViewHolder.OtpScreenViewHolder(binding, rootCallback)
             }
 
             NAME_SCREEN -> {
                 val binding = NameScreenBinding.inflate(
-                    LayoutInflater.from(parent.context),
-                    parent,
-                    false
+                    LayoutInflater.from(parent.context), parent, false
                 )
                 return OnBoardScreensViewHolder.NameScreenViewHolder(binding, rootCallback)
             }
 
             FORM_SCREEN -> {
                 val binding = FormScreenBinding.inflate(
-                    LayoutInflater.from(parent.context),
-                    parent,
-                    false
+                    LayoutInflater.from(parent.context), parent, false
                 )
                 return OnBoardScreensViewHolder.FormScreenViewHolder(binding, rootCallback)
             }
@@ -101,7 +90,7 @@ class OnBoardScreensAdapter :
     override fun getItemCount(): Int = dataList.size
 
     override fun getItemViewType(position: Int): Int {
-        return when(dataList[position]){
+        return when (dataList[position]) {
             is Int -> dataList[position] as Int
             is PhoneSmsResponse -> OTP_SCREEN
             is UserData -> NAME_SCREEN
@@ -115,7 +104,7 @@ class OnBoardScreensAdapter :
     }
 
     fun addItem(item: Any, position: Int) {
-        if (!dataList.contains(item)){
+        if (!dataList.contains(item)) {
             dataList.add(item)
             notifyItemInserted(position)
         }

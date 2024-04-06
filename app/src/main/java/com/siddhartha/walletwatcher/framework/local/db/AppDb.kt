@@ -7,7 +7,7 @@ import com.siddhartha.walletwatcher.data.model.onboarding.UserData
 
 @Database(
     entities = [UserData::class],
-    version = 1,
+    version = 2,
     exportSchema = false,
 )
 abstract class AppDb : RoomDatabase() {

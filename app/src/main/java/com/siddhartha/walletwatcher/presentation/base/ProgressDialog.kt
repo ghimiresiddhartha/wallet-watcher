@@ -1,4 +1,4 @@
-package com.siddhartha.walletwatcher.presentation.common
+package com.siddhartha.walletwatcher.presentation.base
 
 import android.app.Dialog
 import android.content.Context

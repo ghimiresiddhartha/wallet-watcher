@@ -1,4 +1,4 @@
-package com.siddhartha.walletwatcher.callback
+package com.siddhartha.walletwatcher.common.callback
 
 import android.view.View
 

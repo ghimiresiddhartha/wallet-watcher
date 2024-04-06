@@ -12,7 +12,6 @@ import androidx.databinding.DataBindingUtil
 import androidx.databinding.ViewDataBinding
 import androidx.lifecycle.ViewModel
 import com.siddhartha.walletwatcher.R
-import com.siddhartha.walletwatcher.presentation.common.ProgressDialog
 import com.siddhartha.walletwatcher.util.AppUtil
 import com.siddhartha.walletwatcher.util.ext.preventTwoClick
 
@@ -95,7 +94,7 @@ abstract class BaseActivity<T : ViewDataBinding, V : ViewModel> : AppCompatActiv
         methodManager.showSoftInput(view, InputMethodManager.SHOW_IMPLICIT)
     }
 
-    open fun showProgressDialog(message: String = "Loading") {
+    open fun showProgressDialog(message: String = getString(R.string.loading)) {
         customProgress?.let {
             if(!it.isVisible())
                 it.showProgress(this, message, false)

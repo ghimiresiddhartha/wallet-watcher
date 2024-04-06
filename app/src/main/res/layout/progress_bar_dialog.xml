@@ -4,13 +4,13 @@
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:background="@drawable/rounded_corner_bg"
-    android:paddingHorizontal="@dimen/dp_16"
-    android:paddingVertical="@dimen/dp_12">
+    android:paddingHorizontal="16dp"
+    android:paddingVertical="12dp">
 
     <com.airbnb.lottie.LottieAnimationView
         android:id="@+id/progressLottieView"
-        android:layout_width="@dimen/dp_36"
-        android:layout_height="@dimen/dp_36"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
         android:layout_alignParentTop="true"
         android:layout_centerHorizontal="true"
         android:adjustViewBounds="true"
@@ -24,12 +24,12 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@id/progressLottieView"
-        android:layout_marginTop="@dimen/dp_2"
+        android:layout_marginTop="2dp"
         android:background="@android:color/transparent"
-        android:gravity="center"
-        android:textColor="@color/color_accent"
         android:fontFamily="@font/font_regular"
+        android:gravity="center"
         android:text="@string/loading"
+        android:textColor="@color/color_accent"
         android:visibility="visible" />
 
 </RelativeLayout>

@@ -32,8 +32,20 @@ android {
     flavorDimensions += "release"
 
     buildTypes {
-        release {
+        debug {
             isMinifyEnabled = false
+            isDebuggable = true
+            isShrinkResources = false
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+        }
+
+        release {
+            isMinifyEnabled = true
+            isShrinkResources = true
+            isDebuggable = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -42,18 +54,7 @@ android {
     }
 
     productFlavors {
-        create("DevEnv") {
-            dimension = "development"
-            versionCode = 1
-            versionName = "0.0.1"
-            buildConfigField("String", "SHARED_PREF_NAME", "\"WalletWatcherApp\"")
-            buildConfigField("String", "SECRET_KEY", "\"${project.properties["SECRET_KEY"]}\"")
-            buildConfigField("String", "IV_KEY", "\"${project.properties["IV_KEY"]}\"")
-            buildConfigField("String", "ALGORITHM", "\"${project.properties["ENCRYPTION_ALGORITHM"]}\"")
-            buildConfigField("String", "MODE", "\"${project.properties["ENCRYPTION_MODE"]}\"")
-        }
-
-        create("ReleaseEnv") {
+        create("WalletStaging") {
             dimension = "release"
             versionCode = 1
             versionName = "Code001"
@@ -61,7 +62,11 @@ android {
             buildConfigField("String", "DATABASE_NAME", "\"wallet-watcher-database\"")
             buildConfigField("String", "SECRET_KEY", "\"${project.properties["SECRET_KEY"]}\"")
             buildConfigField("String", "IV_KEY", "\"${project.properties["IV_KEY"]}\"")
-            buildConfigField("String", "ALGORITHM", "\"${project.properties["ENCRYPTION_ALGORITHM"]}\"")
+            buildConfigField(
+                "String",
+                "ALGORITHM",
+                "\"${project.properties["ENCRYPTION_ALGORITHM"]}\""
+            )
             buildConfigField("String", "MODE", "\"${project.properties["ENCRYPTION_MODE"]}\"")
         }
     }
@@ -138,17 +143,9 @@ dependencies {
             ksp(compiler)
         }
 
-        //Image Processing
-        implementation(glide)
-        ksp(glide.compiler)
-
         //Layout
         implementation(neumorphism)
-        implementation(chipnavigationbar)
         implementation(lottie)
-        implementation(shimmer)
-        implementation(circleimage)
-        implementation(spinkit)
         implementation(chart)
 
         //Converter

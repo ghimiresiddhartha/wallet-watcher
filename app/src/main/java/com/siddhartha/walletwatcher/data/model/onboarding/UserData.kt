@@ -11,8 +11,8 @@ data class UserData(
     @SerializedName("id") @PrimaryKey(autoGenerate = true) val id: Int?,
     @SerializedName("uid") @ColumnInfo(name = "uid") val uid: String?,
     @SerializedName("username") @ColumnInfo(name = "username") val screenName: String?,
-    @SerializedName("phone") @ColumnInfo(name="phone") val phoneNumber: ByteArray?
-): Serializable {
+    @SerializedName("phone") @ColumnInfo(name = "phone") val phoneNumber: ByteArray?
+) : Serializable {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false

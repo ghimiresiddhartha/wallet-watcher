@@ -10,9 +10,6 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import javax.crypto.Cipher
-import javax.crypto.spec.IvParameterSpec
-import javax.crypto.spec.SecretKeySpec
 import javax.inject.Named
 import javax.inject.Singleton
 
@@ -25,8 +22,9 @@ class DbModule {
     fun provideSharedPreference(
         @ApplicationContext context: Context
     ): SharedPreferences {
-        return context.getSharedPreferences(BuildConfig.SHARED_PREF_NAME,
-            Context.MODE_PRIVATE)
+        return context.getSharedPreferences(
+            BuildConfig.SHARED_PREF_NAME, Context.MODE_PRIVATE
+        )
     }
 
     @Provides
@@ -34,34 +32,6 @@ class DbModule {
     fun provideRoomDb(
         @ApplicationContext context: Context
     ): AppDb = Room.databaseBuilder(
-        context,
-        AppDb::class.java,
-        "DATABASE_NAME"
+        context, AppDb::class.java, BuildConfig.DATABASE_NAME
     ).fallbackToDestructiveMigration().build()
-
-    @Provides
-    @Singleton
-    @Named("encrypt")
-    fun provideCipherEncryptInstance(): Cipher {
-        val cipher = Cipher.getInstance(BuildConfig.ALGORITHM)
-        cipher.init(
-            Cipher.ENCRYPT_MODE,
-            SecretKeySpec(BuildConfig.SECRET_KEY.toByteArray(), BuildConfig.MODE),
-            IvParameterSpec(BuildConfig.IV_KEY.toByteArray())
-        )
-        return cipher
-    }
-
-    @Provides
-    @Singleton
-    @Named("decrypt")
-    fun provideCipherDecryptInstance(): Cipher {
-        val cipher = Cipher.getInstance(BuildConfig.ALGORITHM)
-        cipher.init(
-            Cipher.DECRYPT_MODE,
-            SecretKeySpec(BuildConfig.SECRET_KEY.toByteArray(), BuildConfig.MODE),
-            IvParameterSpec(BuildConfig.IV_KEY.toByteArray())
-        )
-        return cipher
-    }
 }

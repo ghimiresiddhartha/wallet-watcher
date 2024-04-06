@@ -6,20 +6,14 @@ import com.siddhartha.walletwatcher.data.model.onboarding.VerifiedPhoneDetails
 
 fun VerifiedPhoneDetails.toPhoneSmsDetails() =
     com.siddhartha.walletwatcher.domain.model.onboarding.VerifiedPhoneDetails(
-        smsCode,
-        null,
-        null
+        smsCode, null, null
     )
 
 fun PhoneAuthDetails.toPhoneAuthDetails() =
     com.siddhartha.walletwatcher.domain.model.onboarding.PhoneAuthDetails(
-        verificationId,
-        resendToken
+        verificationId, resendToken
     )
 
-fun UserData.toUserData() =
-    com.siddhartha.walletwatcher.domain.model.onboarding.UserData(
-        uid,
-        screenName,
-        null
-    )
+fun UserData.toUserData() = com.siddhartha.walletwatcher.domain.model.onboarding.UserData(
+    uid, screenName, null
+)

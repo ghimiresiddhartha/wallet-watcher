@@ -26,4 +26,16 @@
     <string name="food">Food</string>
     <string name="transportation">Transportation</string>
     <string name="calculate">Calculate</string>
+    <string name="field_error">Please fill all the category mentioned above.</string>
+    <string name="welcome">Welcome</string>
+    <string name="user">User</string>
+    <string name="total_annual_income">Total Annual Income</string>
+    <string name="hundred">100</string>
+    <string name="thousand">1000</string>
+    <string name="total_monthly_income">Total Monthly Income</string>
+    <string name="category_based_analysis">Category Based Analysis</string>
+
+    <string name="food_chart_title">Expenses On Food</string>
+    <string name="entertainment_chart_title">Expenses On Entertainment</string>
+    <string name="transportation_chart_title">Expenses On Transportation</string>
 </resources>
