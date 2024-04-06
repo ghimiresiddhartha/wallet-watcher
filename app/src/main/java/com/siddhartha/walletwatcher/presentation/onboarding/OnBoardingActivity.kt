@@ -69,8 +69,8 @@ class OnBoardingActivity : BaseActivity<ActivityOnBoardingBinding, OnBoardingVie
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 onBoardingViewModel.userData.collect { userData ->
-                    finishProgressDialog()
                     if (userData != null) {
+                        finishProgressDialog()
                         uid = userData.uid.toString()
                         if (userData.screenName != "null") {
                             screenName = userData.screenName.toString()
